@@ -1,7 +1,7 @@
 # Indian Legal Advisory RAG Platform
 
-A production-quality, trustworthy Retrieval-Augmented Generation (RAG) system designed for Indian Law. Unlike generic conversational chatbots, this platform operates as an intelligent legal research assistant. It delivers structured, verifiable, and fully grounded legal reasoning based strictly on official documents (Constitution of India, BNS, BNSS, etc.), complete with exact citations and confidence scoring.
-
+Retrieval-Augmented Generation (RAG) system designed for Indian Law. Unlike generic conversational chatbots, this platform operates as an intelligent legal research assistant. 
+It delivers structured, verifiable, and fully grounded legal reasoning based strictly on official documents (Constitution of India, BNS, BNSS, etc.), complete with exact citations and confidence scoring.
 
 ## 🌟 Project Vision & Core Principles
 

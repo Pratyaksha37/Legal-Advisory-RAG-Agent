@@ -1,4 +1,4 @@
-from datetime import date
+import datetime
 from enum import Enum
 from typing import Any, Optional
 
@@ -35,7 +35,7 @@ class LegalDocument(BaseModel):
 
     case_citation: Optional[str] = None
     court: Optional[str] = None
-    date: Optional[date] = None
+    date: Optional[datetime.date] = None
 
     metadata: dict[str, Any] = Field(default_factory=dict)
 

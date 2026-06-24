@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Environment
+.env
+*.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data
+data/raw/*
+data/corpus/*
+data/embeddings/*
+data/indexes/faiss/*
+data/indexes/bm25/*
+data/telemetry/*
+data/evaluation/*
+!data/raw/.gitkeep
+!data/corpus/.gitkeep
+!data/embeddings/.gitkeep
+!data/indexes/faiss/.gitkeep
+!data/indexes/bm25/.gitkeep
+!data/telemetry/.gitkeep
+!data/evaluation/.gitkeep
+
+# Logs
+*.log
+logs/
+
+# Coverage
+htmlcov/
+.coverage
+coverage.xml

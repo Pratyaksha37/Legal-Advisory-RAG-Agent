@@ -14,7 +14,8 @@ IN_SCOPE_TERMS: list[re.Pattern] = [
 
 
 OUT_OF_SCOPE_TERMS: list[re.Pattern] = [
-    re.compile(r"\b(american|us\s+law|uk\s+law|copyright|patent|trademark)\b", re.IGNORECASE),
+    re.compile(r"\b(american|us\s+(law|constitution|code|statute|court)|uk\s+(law|constitution|code)|british)\b", re.IGNORECASE),
+    re.compile(r"\b(copyright|patent|trademark)\b", re.IGNORECASE),
     re.compile(r"\b(medicine|prescription|treatment|diagnosis|surgery)\b", re.IGNORECASE),
     re.compile(r"\b(recipe|cooking|baking)\b", re.IGNORECASE),
     re.compile(r"\b(stock|investment|trading|cryptocurrency)\b", re.IGNORECASE),

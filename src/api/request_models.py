@@ -16,6 +16,7 @@ class RetrievedDocInfo(BaseModel):
     vector_score: Optional[float] = None
     bm25_score: Optional[float] = None
     combined_score: float = 0.0
+    reranker_score: Optional[float] = None
 
 
 class AskResponse(BaseModel):

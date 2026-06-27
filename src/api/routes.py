@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 
 from src.api.dependencies import get_pipeline, get_telemetry
 from src.api.request_models import AskRequest, AskResponse, HealthResponse
+from src.pipeline.ingestion_orchestrator import IngestionOrchestrator
 from src.pipeline.orchestrator import PipelineOrchestrator
 from src.telemetry import TelemetryLogger
 
@@ -14,6 +15,28 @@ async def ask(
     pipeline: PipelineOrchestrator = Depends(get_pipeline),
 ) -> AskResponse:
     return await pipeline.ask(request.query, top_k=request.top_k)
+
+
+@router.post("/upload")
+async def upload_document(
+    file: UploadFile = File(...),
+    pipeline: PipelineOrchestrator = Depends(get_pipeline),
+):
+    if pipeline.retriever is None:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=503, detail="Indexes not loaded")
+
+    orchestrator = IngestionOrchestrator()
+    orchestrator.set_faiss(pipeline.retriever.faiss)
+
+    contents = await file.read()
+    try:
+        saved_path = orchestrator.save_upload(contents, file.filename)
+        result = orchestrator.ingest(saved_path)
+        return result
+    except ValueError as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/health", response_model=HealthResponse)

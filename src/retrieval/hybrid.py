@@ -1,6 +1,7 @@
 import json
 import time
 from pathlib import Path
+from typing import Optional
 
 from src.config.constants import CHUNKS_FILE
 from src.config.settings import settings
@@ -9,6 +10,7 @@ from src.core.logging import logger
 from src.embeddings import EmbeddingModel
 from src.retrieval.bm25_engine import BM25Engine
 from src.retrieval.faiss_index import FAISSIndexManager
+from src.retrieval.reranker import Reranker
 from src.retrieval.retrieval_config import RetrievalConfig
 from src.retrieval.retrieval_result import HybridResult, RetrievalResult
 
@@ -20,6 +22,7 @@ class HybridRetriever:
         bm25_engine: BM25Engine | None = None,
         embedding_model: EmbeddingModel | None = None,
         config: RetrievalConfig | None = None,
+        reranker: Optional["Reranker"] = None,
     ):
         self.faiss = faiss_manager or FAISSIndexManager()
         self.bm25 = bm25_engine or BM25Engine()
@@ -31,6 +34,7 @@ class HybridRetriever:
             fusion_method=settings.fusion_method,
         )
         self.chunks_by_id: dict[str, dict] = {}
+        self.reranker = reranker
 
     def load(self) -> None:
         self.faiss.load()
@@ -103,8 +107,11 @@ class HybridRetriever:
             results.values(), key=lambda r: r.combined_score, reverse=True
         )[:k]
 
-        for chunk_id, chunk in self.chunks_by_id.items():
-            heading_field = chunk.get("heading")
+        reranker_elapsed = 0.0
+        if self.reranker is not None and sorted_results:
+            reranker_start = time.monotonic()
+            sorted_results = self.reranker.rerank(query, sorted_results, top_k=k)
+            reranker_elapsed = (time.monotonic() - reranker_start) * 1000
 
         return HybridResult(
             results=sorted_results,
@@ -112,6 +119,7 @@ class HybridRetriever:
             total_results=len(sorted_results),
             vector_latency_ms=round(vector_elapsed, 2),
             bm25_latency_ms=round(bm25_elapsed, 2),
+            reranker_latency_ms=round(reranker_elapsed, 2),
         )
 
     def _compute_combined_scores(

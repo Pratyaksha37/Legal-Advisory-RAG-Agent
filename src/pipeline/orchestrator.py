@@ -4,7 +4,12 @@ from typing import Optional
 from src.api.request_models import AskResponse, RetrievedDocInfo
 from src.confidence import ConfidenceEngine
 from src.core.logging import logger
-from src.generation import InferencePipeline, LLMClient, PromptBuilder
+from src.generation import (
+    InferencePipeline,
+    LLMClient,
+    PromptBuilder,
+    QueryRewriter,
+)
 from src.guardrails import (
     CitationEnforcer,
     ConfidenceThreshold,
@@ -12,13 +17,18 @@ from src.guardrails import (
     InjectionDetector,
     ScopeChecker,
 )
-from src.retrieval import BM25Engine, FAISSIndexManager, HybridRetriever
+from src.retrieval import (
+    BM25Engine,
+    FAISSIndexManager,
+    HybridRetriever,
+    Reranker,
+)
 from src.retrieval.retrieval_config import RetrievalConfig
 from src.telemetry import TelemetryLogger
 
 
 class PipelineOrchestrator:
-    def __init__(self):
+    def __init__(self, query_rewriter: QueryRewriter | None = None, reranker: Reranker | None = None):
         self.injection_detector = InjectionDetector()
         self.scope_checker = ScopeChecker()
         self.citation_enforcer = CitationEnforcer()
@@ -29,9 +39,11 @@ class PipelineOrchestrator:
         self.llm = None
         self.retriever = None
         self.telemetry = TelemetryLogger()
+        self.query_rewriter = query_rewriter
+        self.reranker = reranker
 
     def initialize(self) -> None:
-        retriever = HybridRetriever()
+        retriever = HybridRetriever(reranker=self.reranker)
         retriever.load()
         self.retriever = retriever
         try:
@@ -62,13 +74,16 @@ class PipelineOrchestrator:
                 response_text = self.prompt_builder.build_refusal_prompt(reason)
                 return self._build_response(query, response_text, guardrail_results, confidence_score, confidence_details, start_time, span_id, top_k=top_k)
 
+            if self.query_rewriter:
+                query = self.query_rewriter.rewrite(query)
+
             hybrid_result = self.retriever.retrieve(query, top_k=top_k)
             self.telemetry.log_retrieval(
                 span_id,
                 [r.chunk_id for r in hybrid_result.results],
                 {r.chunk_id: r.vector_score for r in hybrid_result.results if r.vector_score is not None},
                 {r.chunk_id: r.bm25_score for r in hybrid_result.results if r.bm25_score is not None},
-                hybrid_result.vector_latency_ms + hybrid_result.bm25_latency_ms,
+                hybrid_result.vector_latency_ms + hybrid_result.bm25_latency_ms + hybrid_result.reranker_latency_ms,
             )
 
             guardrail_results["retrieval"] = len(hybrid_result.results) > 0
@@ -140,6 +155,7 @@ class PipelineOrchestrator:
                         vector_score=r.vector_score,
                         bm25_score=r.bm25_score,
                         combined_score=r.combined_score,
+                        reranker_score=r.reranker_score,
                     )
                 )
 

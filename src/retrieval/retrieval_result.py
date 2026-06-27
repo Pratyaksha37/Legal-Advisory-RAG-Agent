@@ -14,6 +14,7 @@ class RetrievalResult(BaseModel):
     bm25_score: Optional[float] = None
     bm25_rank: Optional[int] = None
     combined_score: float = 0.0
+    reranker_score: Optional[float] = None
     document_title: str = ""
     act_name: Optional[str] = None
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -25,3 +26,4 @@ class HybridResult(BaseModel):
     total_results: int
     vector_latency_ms: float = 0.0
     bm25_latency_ms: float = 0.0
+    reranker_latency_ms: float = 0.0
